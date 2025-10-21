@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>لعبة XO</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #e9fdf1, #c6f7ec);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #mode-select {
+      margin: 20px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      animation: fadeIn 1s ease;
+    }
+    .mode-card {
+      padding: 20px;
+      border-radius: 10px;
+      background-color: #f0fffc;
+      border: 2px solid #14a37f;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+      text-align: center;
+      width: 180px;
+    }
+    .mode-card:hover {
+      transform: scale(1.05);
+      background-color: #ccf0e4;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 90px);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 90px;
+      height: 90px;
+      background-color: #ffffff;
+      color: #14a37f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 36px;
+      font-weight: bold;
+      border: 2px solid #14a37f;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+    .cell:hover {
+      background-color: #dbf9ee;
+      transform: scale(1.05);
+    }
+    #message {
+      margin-top: 25px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #14a37f;
+      text-align: center;
+    }
+    #game-config {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.8s ease;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    #start-btn, #reset-btn, #back-btn {
+      background-color: #14a37f;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #start-btn:hover, #reset-btn:hover, #back-btn:hover {
+      background-color: #0f7a5e;
+    }
+    input[type="text"] {
+      background-color: #ffffff;
+      color: #14a37f;
+      border: 1px solid #14a37f;
+    }
+    #reset-btn, #back-btn {
+      display: none;
+      margin-top: 10px;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="mode-select">
+  <div class="mode-card" id="mode-2p">
+    <h3>👥 لاعبين</h3>
+    <p>تحدي صديقك في معركة ذهنية</p>
+  </div>
+  <div class="mode-card" id="mode-1p">
+    <h3>🤖 ضد "عين"</h3>
+    <p>واجه الذكاء الاصطناعي وتحدى قدراتك</p>
+  </div>
+</div>
+
+<div id="game-config">
+  <input type="text" id="player1" placeholder="اسم اللاعب الأول">
+  <input type="text" id="player2" placeholder="اسم اللاعب الثاني أو عين">
+  <div id="ai-level" style="display:none">
+    اختر مستوى عين:
+    <select id="level">
+      <option value="easy">مبتدئ</option>
+      <option value="medium">متوسط</option>
+      <option value="hard">مستحيل</option>
+    </select>
+  </div>
+  <button id="start-btn">🎮 ابدأ اللعبة</button>
+</div>
+
+<div class="board" id="board" style="display:none;"></div>
+<div id="message"></div>
+<button id="reset-btn">🔄 إعادة اللعب</button>
+<button id="back-btn">🔙 رجوع إلى القائمة</button>
+
+<script>
+  const modeCards = document.querySelectorAll('.mode-card');
+  const gameConfig = document.getElementById('game-config');
+  const board = document.getElementById('board');
+  const message = document.getElementById('message');
+  const resetBtn = document.getElementById('reset-btn');
+  const backBtn = document.getElementById('back-btn');
+  let mode = '2p';
+
+  let cells = Array(9).fill(null);
+  let currentPlayer = 'X';
+  let gameActive = true;
+  let level = 'easy';
+  let player1 = 'X';
+  let player2 = 'O';
+
+  modeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      mode = card.id === 'mode-1p' ? '1p' : '2p';
+      document.getElementById('ai-level').style.display = mode === '1p' ? 'block' : 'none';
+      document.getElementById('player2').placeholder = mode === '1p' ? 'عين' : 'اسم اللاعب الثاني';
+      gameConfig.style.display = 'flex';
+    });
+  });
+
+  document.getElementById('level').addEventListener('change', (e) => {
+    level = e.target.value;
+  });
+
+  document.getElementById('start-btn').addEventListener('click', () => {
+    player1 = document.getElementById('player1').value || 'X';
+    player2 = document.getElementById('player2').value || (mode === '1p' ? 'عين' : 'O');
+    currentPlayer = 'X';
+    gameActive = true;
+    message.textContent = `دور ${player1}`;
+    resetBtn.style.display = 'none';
+    backBtn.style.display = 'inline-block';
+    gameConfig.style.display = 'none';
+    document.getElementById('mode-select').style.display = 'none';
+    board.style.display = 'grid';
+    renderBoard();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    currentPlayer = 'X';
+    gameActive = true;
+    resetBtn.style.display = 'none';
+    message.textContent = `دور ${player1}`;
+    renderBoard();
+  });
+
+  backBtn.addEventListener('click', () => {
+    gameActive = false;
+    board.style.display = 'none';
+    resetBtn.style.display = 'none';
+    backBtn.style.display = 'none';
+    message.textContent = '';
+    document.getElementById('mode-select').style.display = 'flex';
+    gameConfig.style.display = 'none';
+  });
+
+  function renderBoard() {
+    cells = Array(9).fill(null);
+    board.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = `cell-${i}`;
+      cell.addEventListener('click', () => handleClick(i));
+      board.appendChild(cell);
+    }
+  }
+
+  function handleClick(index) {
+    if (!gameActive || cells[index]) return;
+    cells[index] = currentPlayer;
+    document.getElementById(`cell-${index}`).textContent = currentPlayer;
+    const result = checkWinner();
+    if (result) {
+      gameActive = false;
+      message.textContent = result === 'Draw' ? 'تعادل!' : `${currentPlayer === 'X' ? player1 : player2} فاز!`;
+      resetBtn.style.display = 'inline-block';
+      return;
+    }
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    message.textContent = `دور ${currentPlayer === 'X' ? player1 : player2}`;
+    if (mode === '1p' && currentPlayer === 'O') setTimeout(aiMove, 500);
+  }
+
+  function aiMove() {
+    const empty = cells.map((v, i) => v === null ? i : null).filter(v => v !== null);
+    const move = level === 'easy' ? empty[Math.floor(Math.random() * empty.length)] : bestMove('O');
+    if (move !== undefined) handleClick(move);
+  }
+
+  function bestMove(ai) {
+    let bestScore = -Infinity, move;
+    for (let i = 0; i < 9; i++) {
+      if (!cells[i]) {
+        cells[i] = ai;
+        let score = minimax(cells, 0, false);
+        cells[i] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+    }
+    return move;
+  }
+
+  function minimax(newBoard, depth, isMax) {
+    let result = checkWinner();
+    if (result) return { 'O': 10, 'X': -10, 'Draw': 0 }[result];
+    let best = isMax ? -Infinity : Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (!newBoard[i]) {
+        newBoard[i] = isMax ? 'O' : 'X';
+        let score = minimax(newBoard, depth + 1, !isMax);
+        newBoard[i] = null;
+        best = isMax ? Math.max(score, best) : Math.min(score, best);
+      }
+    }
+    return best;
+  }
+
+  function checkWinner() {
+    const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (let [a,b,c] of wins) {
+      if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) return cells[a];
+    }
+    return cells.includes(null) ? null : 'Draw';
+  }
+</script>
+</body>
+</html>
